@@ -3,4 +3,5 @@ and their population is expected to have grown exponentially since then, though 
 
 In this project, my partner John Katial and I created models to estimate the current population of these pythons and understand their affect on native species in the ecosystem. 
 
-![Alt Text](./downloads/python.jpeg)
+![python](https://github.com/user-attachments/assets/2f454206-0b48-431b-abdc-ca5af7e00ce4)
+
