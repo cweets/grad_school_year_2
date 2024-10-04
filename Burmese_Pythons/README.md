@@ -4,4 +4,6 @@ and their population is expected to have grown exponentially since then, though 
 In this project, my partner John Katial and I created models to estimate the current population of these pythons and understand their affect on native species in the ecosystem. 
 
 ![python](https://github.com/user-attachments/assets/2f454206-0b48-431b-abdc-ca5af7e00ce4)
+![python2](https://github.com/user-attachments/assets/300104da-03a4-4ad6-9283-e39cf417d7a8)
 
+photos courtesy of the New York Times and Florida Wildlife Commission
