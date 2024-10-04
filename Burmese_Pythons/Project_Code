@@ -1,0 +1,160 @@
+###Pythons in Python###
+
+#################
+###Exponential Growth###
+#################
+
+##Importing the necessary libraries so Python can read our code and use our data set to make the plot
+import pandas as pd #Import the Python library that enables us to analyze and manipulate the open-source Burmese Python population data
+import matplotlib.pyplot as plt #Import the Python library that allows us to make plots in our code. We cannot make plots without this.
+
+#Import data
+data = pd.read_csv('FL Specimen Management Database Pre-2022PYMO (1).csv')
+
+###Data Manipulation####
+# Filter for sightings in 2020
+sightings_per_year = data.groupby("Year").size() 
+sightings_2021 = sightings_per_year[sightings_per_year.index == 2021]
+sightings_1995 = sightings_per_year[sightings_per_year.index == 1995]
+
+print(sightings_per_year)
+print(sightings_1995)
+print(sightings_2021)
+
+###################
+####Estimate of true number of pythons in the Everglades
+
+###Estimate the total number of pythons in the Everglades in 1995 assuming that only 1% were observed
+python_observations = 2                        #Pythons observed in Everglades in 1995
+total_population = python_observations / 0.01  #division of the empirical python observations by 1%
+print("1995 population:", total_population)    #prints estimated population in 1995
+
+
+###Estimate the total number of pythons in the Everglades in 2021 assuming that only 1% were observed
+python_observations = 1219                     #Pythons observed in Everglades in 2021
+total_population = python_observations / 0.01  #division of the empirical python observations by 1%
+print("2021 population:", total_population)    #prints estimated population in 2021
+
+
+###############
+####Using our calculated r-value and the N(0) from our dataset to calculate the population in 2024 
+
+#Parameters
+r = 0.247                              #growth rate calculated above
+initial_population = 200               #initial population size estimated from python observation data
+time_steps = 29                        #years between 1995 and 2024
+
+#Initialize the independent variable (t)
+t_values = range(0, time_steps+1)      #a list of values ranging from 0 to 30
+print(t_values)
+
+#Initialzes the depedent variable (N)
+N = [0] * (time_steps+1)               #creates a list of zeroes, same number of values as the number of values in t_values
+N[0] = initial_population              #Establishes initial population
+
+#Computes the model
+for t in t_values[:-1]:
+    change_N = r * N[t]                #according to the model: dN/dt = rN
+    N[t+1] = N[t] + change_N
+print(N)
+
+#plot
+plt.plot(t_values, N)                  #plot the data, t vs N
+plt.xlabel('Time (t in years)')        #add an x-axis
+plt.ylabel('Burmese Python Population size (N number of individuals)') #add a y-axis
+plt.minorticks_on()                    #Show the plot's minor ticks
+
+print("  ")
+
+##############
+###Estimating the effect of current management programs
+
+##Using our calculated r-value and the N(0) from our dataset to 
+
+#Parameters
+r = 0.247                              #growth rate calculated above
+initial_population = 200               #initial population size estimated from python observation data
+time_steps = 29                        #years between 1995 and 2024
+d = 2317                               #Creating a parameter for average number of pythons killed annually by the removal program beginning in 2017 (Calclated average pythons removed 2017-2022)
+
+#Initialize the independent variable (t)
+t_values = range(0, time_steps+1)      #a list of values ranging from 0 to 30
+print(t_values)
+
+#Initialzes the depedent variable (N)
+N = [0] * (time_steps+1)               #creates a list of zeroes, same number of values as the number of values in t_values
+N[0] = initial_population              #Establishes initial population
+
+#Computes the model
+for t in t_values[:-1]:
+    change_N = r * N[t] #according to the model: dN/dt = rN
+    if (t >= 22):  # Starting from 2017 (22 years after 1995)
+        change_N = r * N[t] - d  # Subtract 2500 annually
+    N[t+1] = N[t] + change_N
+print(N)
+
+#plot
+plt.plot(t_values, N)  #plot the data, t vs N
+plt.xlabel('Time (t in years)') #add an x-axis
+plt.ylabel('Burmese Python Population size (N number of individuals)') #add a y-axis
+plt.minorticks_on() #Instruction to show the plot's minor ticks
+
+print("  ")
+
+################
+###Estimating competition with crocodiles in the Everglades
+
+def competition(num_time_steps, initial_pop1, initial_pop2, r1, r2, K1, K2, a, b):
+
+    ###############
+    # INITIALIZE VARIABLES
+    t_values = range(0, num_time_steps + 1) #List of values from 0 to num_time_steps + 1
+
+    N1 = [0] * (num_time_steps+1)   
+    N2 = [0] * (num_time_steps+1)  
+
+    N1[0] = initial_pop1
+    N2[0] = initial_pop2
+    ###############
+    # MODEL COMPUTATION
+    # Compute the competition growth model
+    for t in t_values[:-1]:
+
+        # (based on dN1/dt)                  
+        change_N1 = r1 * N1[t]*(1 - ((N1[t] + (a * N2[t])) /K1))      
+              #The population size at t plus 1 is going to equal pop size at t plus the change in population size calculated on the last line
+
+        # (based on dN2/dt)
+        change_N2 = r2 * N2[t]*(1 - ((N2[t] + (b * N1[t])) /K2))      
+ 
+        # Updated N1 and N2 at t+1
+        N1[t+1] = N1[t] + change_N1
+        N2[t+1] = N2[t] + change_N2
+
+  
+    ###############
+    # Plot the resulting N1, N2 values
+    plt.plot(t_values, N1, 'b', label = "Crocodile")    # plot Pop 1 size predictions as a blue line
+    plt.plot(t_values, N2, 'r', label = "Python")    # plot Pop 2 size predictions as a red line
+    plt.xlabel('Time (t)')                          # x-axis label
+    plt.ylabel('Population size (N)')               # y-axis label
+    plt.legend(loc=2)                               # create legend according to labels created in each plot (and place it on upper left side)
+
+    ##############
+    # Return the calculated values for N1, N2
+    return N1, N2
+
+
+#  (note some of these have different names than in the function; that's ok-- you can make them the same or different)
+num_time_steps = 100
+initial_pop1 = 300
+initial_pop2 = 200
+r1 = .13
+r2 = .247
+K1 = 3000
+K2 = 300000
+a = 0.0015
+b = 1.5
+
+N1, N2 = competition(num_time_steps, initial_pop1, initial_pop2, r1, r2, K1, K2, a, b)
+print(N1, N2)
