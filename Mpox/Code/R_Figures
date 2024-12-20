@@ -1,0 +1,62 @@
+##libraries##
+library(tidyverse)
+library(ggplot2)
+
+
+###Here I create a simple dataframe where I tell it I want the 4 scenarios, the midpoint of the ranges, which I just calculated by hand bc
+###there were 4 of them, and then the upper and lower bound of the ranges of probability
+data <- data.frame( 
+  Scenario = c("Bar Closing", "Vaccination of PSW", "Random Vaccination", "No Intervention"), #my 4 scenario names for x axis
+  Probability = c(4.5, 4.45, 19.8, 21.4), #Midpoint of probability range
+  Lower = c(3.2, 0.0, 18.3, 21.4),        #Lower bound of probability range
+  Upper = c(5.8, 8.9, 21.2, 21.4)         #Upper bound of probability range
+)
+
+
+# Creates the figure
+scenariobar <- ggplot(data, aes(x = Scenario, y = Probability, fill = Scenario)) + #this tells it what data to use, what I want on x and y and what color the bars should be, which isn't totally necessary, but I think it's pretty 
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) + #bar chart 
+  geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.2, position = position_dodge(0.7)) + #adds error bars with mins and maxs according to bounds
+  labs( #adds labels to x and y axes
+    title = element_blank(), #i dont want a title on this 
+    y = "Probability (%)",
+    x = "Intervention Scenario"
+  ) +
+  scale_fill_manual(values = c("#008b73", "#c1a5ef", "#003983", "#73c9ff"), name = "Scenario") + #again, I thought it was pretty to add color
+  theme_minimal() + #I don't want a bunch of junk in the back so this + the theme below takes out the distracting stuff
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1), #make the bar labels at 45 degree angles
+    panel.grid.major.x = element_blank(), #remove vertical grid lines
+    panel.grid.minor.x = element_blank(), #remove vertical grid lines
+    legend.position = "none") #don't want a legend because the bars are already labeled 
+
+print(scenariobar)
+
+
+
+
+#this one is pretty much the same but w/ a different df
+data2 <- data.frame(
+  Individuals_Vaccinated = c(50, 100, 200, 300, 400, 500, 600, 700, 800), #number of lucky randos
+  Probability = c(18.5, 14.7, 17.05, 10.65, 11.15, 8.05, 8.35, 7.2, 0.85), #Midpoint of probability range
+  Lower = c(16.8, 10.7, 13.8, 2.5, 6.4, 0.8, 0.0, 0.0, 0.0),              #Lower bound of probability range
+  Upper = c(20.2, 18.7, 20.3, 18.8, 15.9, 15.3, 16.7, 14.4, 1.7)           #Upper bound of probability range
+)
+
+
+sensebar <- ggplot(data2, aes(x = factor(Individuals_Vaccinated), y = Probability)) + #this tells it what data to use, what I want on x and y 
+  geom_bar(stat = "identity", fill = "#7ab4c0", width = 0.7) + #this is where I assign a pretty color for bars 
+  geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0.2) + #error bars!
+  labs( #adds labels to x and y axes
+    title = element_blank(), #bye title
+    y = "Probability of Large Epidemic (%)", #y axis label
+    x = "Number of Individuals Vaccinated" #x axis label
+  ) +
+  theme_minimal() +  #I don't want a bunch of junk in the back so this + the theme below takes out the distracting stuff
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(), 
+    legend.position = "none") #don't want a legend because the bars are already labeled 
+
+print(sensebar)
