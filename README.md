@@ -8,4 +8,6 @@ These are projects that I did in Dr. Bansal's Population and Disease Modeling Cl
 🦠💉 I then became particularly interested in using modfied compartmental and synthetic network models to understand optimal vaccination strategies for the [ongoing clade I mpox epidemic](https://worldhealthorg.shinyapps.io/mpx_global/) in the Democratic Republic of the Congo. I spent the second half of the semester learning how to build these models and found that prioritized vaccination of subpopulations most at risk of transmitting mpox was the most efficient strategy for ending the outbreak. Additionally, as this outbreak has primarily been transmitted through sexual networks, we found that a scale-free degree distributed network model presented a more realistic tool for understanding the dynamics of this disease and more closely aligned with previous models used to simulate the spread of sexually transmitted infections. Visit the [Mpox](https://github.com/cweets/grad_school_year_2/tree/main/Mpox) repo to learn more about what we found! 
 
 ![mpox](https://github.com/cweets/grad_school_year_2/blob/main/Mpox/Monkeypox-Virus-CDC-panorama-e28211d26570b3f586bdbb16045991bd-ifmulep01ros.jpeg)
-By coauthor on this work was John Katial, a fourth-year undergraduate student at Georgetown University. 
+
+
+My coauthor on this work was John Katial, a fourth-year undergraduate student at Georgetown University. 
