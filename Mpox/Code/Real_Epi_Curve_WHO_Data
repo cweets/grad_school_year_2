@@ -1,0 +1,15 @@
+###Libraries###
+import matplotlib.pyplot as plt  # a library to create plots
+import scipy.integrate as sp_int # a library to integrate differential equations
+import scipy.optimize as sp_opt  # a library for statistical fitting
+import numpy as np               # a library for some useful numerical tools
+
+#read in data
+DRC_Cases = pd.read_csv("DRC_Cases.csv")
+
+#define variables
+cases = DRC_Cases['new_confirmed_cases']
+weeks = DRC_Cases['week']
+
+#easy plot
+plt.plot(weeks, cases, 'bo', label='cases')
