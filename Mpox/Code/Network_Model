@@ -1,0 +1,388 @@
+###libraries###
+import matplotlib.pyplot as plt  # a library to create plots
+import numpy as np               # a library with useful statistical and numerical tools
+import numpy.random as nprnd     # a library with useful tools related to random numbers
+import random as rnd             # a library for some special tasks related to random numbers
+import networkx as nx            # a library for working with networks
+import pandas as pd              #library for reading my csv
+
+
+######## !!! This block is not code written by me - it was written by Dr. Bansal in November 2024 !!! ###
+###The code below was created by Dr. Bansal for this project #####
+#######
+G = nx.read_edgelist('edgelist_scalefree_k2_N1000_Nov15.txt', delimiter=',', nodetype=int) #This reads in the txt file for the network and assigns it to the object "G"
+
+# show how many/which nodes have degree > 10
+high_degree_nodes_degrees = [(node,val) for (node, val) in G.degree() if val > 10] #This identifies which nodes have a degree greater than 10
+average_degree = sum(dict(G.degree()).values()) / len(G.nodes())
+print(average_degree)
+print("Nodes (with degrees) that have degree > 10: ", high_degree_nodes_degrees)
+print("Percent that have degree > 10: ", 100*len(high_degree_nodes_degrees)/len(G.nodes()))
+
+# visualize the network
+pos = nx.kamada_kawai_layout(G) 
+nx.draw(G, pos, node_size = 30)
+
+##### End code written by Dr. Bansal ###
+
+######################## The following percolation function was originally written by Dr. Bansal, Juliana Taube, and Alexes Merrit for a lab assignment in class and was modified by me for this project ####
+def percolation_on_network(Network,T):
+# This function implements a percolation simulation on a contact 
+#  network, Network, with transmissibility, T.
+
+    # Initialize variables for the list of infected and recovered individuals
+    infected = []
+    recovered = []
+    infected_count = 0
+
+    ##################
+    # Choose one node to infect (patient zero) so that outbreak can be seeded
+    p_zero = rnd.choice(list(Network.nodes())) # Randomly choose one node from the network
+    infected = [p_zero]                  # The node p_zero is now infected
+    infected_count = 1
+
+    ##################
+    # Run the percolation simulation to simulate disease spread in network
+    while infected:                      #Continue this process while there are any indivdiuals in the infected list
+
+        infector = infected[0]           # pick out the first individual in the infected list
+
+        ##################
+        for neigh in Network.neighbors(infector): # for all the nodes connected to (i.e. neighbors of) the infector 
+
+            if neigh not in infected and neigh not in recovered: # check if this neighbor is susceptible
+
+                # figure out if infector is successful at infecting neighbor "neigh"
+                if rnd.random() < T:                     # if infector does infect neigh
+                    infected.append(neigh)               # add neigh to the list of infected nodes (so it can infect others)
+                    infected_count = infected_count +1   # add  one to the infected count
+
+        # since infector has now had a chance to infected all its neighbors,
+        #  we can remove it from the infected list, and put it in the recovered list
+        infected.remove(infector)
+        recovered.append(infector)
+
+    # return the number of individuals (nodes) infected in this outbreak
+    return infected_count
+
+########################
+def percolation_results(Network, T):
+# This function carries out Monte Carlo simulations with the percolation model
+#  Input: Network = host population contact network, T = pathogen transmissibility
+#  Output: average large epidemic size, average small outbreak size, probability of large epidemics
+
+    ##################
+    # initialize lists for small outbreak and large epidemic sizes
+    large_epidemic = []
+    small_outbreak = []
+    # initialize counter for how many large epidemics there have been
+    large_epi_count = 0
+
+    ##################
+    # define parameters for the Monte Carlo simulation
+    num_simulations = 1000
+    largeepi_threshold = 0.05
+    population_size = nx.number_of_nodes(Network)
+
+    ##################
+    # Run the Monte Carlo simulation
+    for sim in range(0,num_simulations):
+
+        # Do one simulation of the percolation model
+        infected_count= percolation_on_network(Network,T)
+
+        # Decide if it is a small or large epidemic based on the epidemic threshold
+        if infected_count > largeepi_threshold*population_size:  
+            # if yes, save the infected count in the large_epidemic list
+            large_epidemic.append(infected_count)
+            # and also, increase the counter of how many large epidemics have occurred
+            large_epi_count = large_epi_count + 1
+        else: 
+            # if no, save the infected count in the small_outbreak list
+            small_outbreak.append(infected_count)
+
+    # calculate the average size of small outbreak and large epidemics 
+    average_large_epi_size= np.mean(large_epidemic)
+    average_small_out_size= np.mean(small_outbreak)
+
+    # calculate the probability of an epidemic
+    prob_epidemic = 1.0*large_epi_count/num_simulations
+
+    # return the average size of large epidemics and small outbreaks
+    return average_large_epi_size, average_small_out_size, prob_epidemic #I added the probability in here because I think it's helpful to see in my results
+
+
+#######
+
+#Set parameters for undistanced epidemic run
+Network = G #Network created by Dr. Bansal
+T = 0.5 
+
+output1 = percolation_results(Network, T) #calls my function and gives it the parameters
+print("In a bar network (scale-free), the average size for a large epidemic and small outbreak are the first two values, and the probability of a large outbreak taking place is the last value", output1)
+
+
+#### Visualize my hubs ##
+hubs = high_degree_nodes_degrees = [(node,val) for (node, val) in G.degree() if val > 10]
+print(hubs)
+
+def shut_all_bars(network, r): #function with inputs of network name, restriction (r) level, which is the reduction of contacts between individuals and professional sex workers as a result of bar closings - we assume here that 100% of bars that people in the network frequent are closed
+    
+    net_copy = network.copy() #copies the network
+    
+    hubs = [node for (node, val) in network.degree() if val > 10] #makes a list of the nodes in the copied network
+   
+    for hub in hubs: 
+        neighbors = list(nx.neighbors(net_copy, hub)) #all of the neighbors of the hub
+        edges_removed = round(len(neighbors) * r) #calculates number of edges to remove if some proportion (r) of edges are removed from a hub 
+        remove_from = nprnd.choice(neighbors, size = edges_removed, replace = False) #chooses which edges get removed from the hubs
+        net_copy.remove_edges_from([(hub, neighbor) for neighbor in remove_from]) #removes the selected edges from hubs
+        
+    return(net_copy)
+######
+
+
+#########
+####Testing to make sure that bar closing fxn actually works### 
+
+print("The original hubs and their degrees were", hubs) #I defined above that these are the hubs and the number of connections that they have
+
+
+sex_workers = [530, 492, 867, 44, 103, 914, 973, 76, 701] #Every node with mode than 10 hubs - I'm assuming anyone in our network that is having contact with more than 10 people is a professional sex worker, not as a judgement, but just an assumption
+
+outcomes = [] #Makes a list for my outcomes
+
+###Set parameters####
+network = G #Original network made by Dr. Bansal
+r = 0.75 #reduction of interactions between PSWs and others by 75%
+
+####
+####I want to loop this, because even though this is only rounding, it could still change the outcome of my percolation if the network looks slightly different each time###
+####
+
+for i in range(5): #Loops five times
+    print(f"Run {i + 1}:") #The f here is an f-string, which allows me to use the {} to replace each of the workers passed to with their values and print that, rather than having to do this multiple times! 
+    
+#call function and assign it to a new object so that I can compare to the network that was unmodified
+    no_bar_net = shut_all_bars(network, r)
+
+
+    ###What is really important here is just the changing of the network - I only added the block of code below to verify that there was actually a difference in the outcomes (number of edges for each node) for each run. This could be ignored or commented out to make the code cleaner #############
+    
+  
+    #Shows the new hubs after contacts have been diminished by bar closings
+    modified_hubs = [(node, val) for (node, val) in no_bar_net.degree() if val > 10] #These are only the nodes that still have greater than 10 degrees after "bar closing"
+
+    #print(modified_hubs) #You could see this if you wanted to, but they are the same for every run
+
+    hub_degrees = {worker: no_bar_net.degree[worker] for worker in sex_workers} #This tells me the new degrees for the sex workers after modifying their number of edges
+    
+    print(hub_degrees)
+    
+    ############
+    
+ #Below I make a list in outcomes for each loop through of the outcomes from each run of the network
+    outcomes.append({
+        "run": i + 1,
+        "no_bar_net": no_bar_net
+    })
+    
+    
+#### 
+# print out the list of all nodes and edges in the network - I'm not doing this because the numbers are annoying, but you could if you wanted to
+
+#print("The list of no bar network nodes is: ", nx.nodes(no_bar_net)) #### We expect this to be unchanged
+#print("The list of distanced network edges is: ", nx.edges(no_bar_net)) ### This is where we expect the hubs to have a changed number of degrees 
+
+
+
+#####
+####Okay, so now it's time to run the percolation simulation with the bar closed network! ###
+
+###Make a list for my results
+no_bar_perc_results = []
+
+#Set my constant parameter, T
+T = 0.5
+
+for outcome in outcomes: #This is from the list of outcomes I created above from the five runs of making the network
+    network = outcome['no_bar_net'] #I'm passing the list of modified network 
+    output = percolation_results(network, T)
+    
+    print(output)
+    
+    no_bar_perc_results.append ({ #this adds all of my results from each run of the network to a list so I can see what the outcome of each run is. Here, run tells which run of the model it is working off of and results
+        "run": outcome ["run"],
+        "results": output
+    })
+
+print("In a network (scale-free) with all of the bars closed, the average size for a large epidemic and small outbreak are the first two values, and the probability of a large outbreak taking place is the last value", no_bar_perc_results)
+#######
+
+####
+def vaccinate_psw(network, v): #function with inputs of network name and v = vaccine efficacy 
+    
+    net_copy = network.copy() #copies the network
+    
+    hubs = [node for (node, val) in network.degree() if val > 10] #makes a list of the hubs in the copied network, which are defined as nodes with degree greater than 10
+    
+    full_vaxxed_hubs = round(len(hubs) * v) #simulates a vaccine efficacy less than 100% by calculating some percentage of hubs to be efficaciously vaccinated
+    
+    vaxxed = nprnd.choice(hubs, full_vaxxed_hubs , replace=False) #chooses the hubs to be vaccinated efficaciously based upon the calculated percentage 
+   
+    vaxxed_hubs = net_copy.remove_nodes_from(vaxxed) #removes the selected hubs from the network
+        
+    return(net_copy)
+
+#######
+
+
+##### Verify that this is working###
+###Set parameters
+network = G #Original network made by Dr. Bansal
+v = 0.75 #Vaccine efficacy
+
+outcomes = [] #Makes a list for my outcomes
+
+for i in range(5): #Loops five times
+    print(f"Run {i + 1}:") #run label
+    
+#call function and assign it to a new object so that I can compare to the network that was unmodified
+    psw_vaxx_net = vaccinate_psw(network, v)
+    
+#Below I make a list in outcomes for each loop through of the outcomes from each run of the network
+    outcomes.append({
+        "run": i + 1,
+        "psw_vaxx_net": psw_vaxx_net
+    })
+print(outcomes) #verify that networks are being made
+#####
+
+####
+####Now we run the percolation simulation with the psws vaxxed network! ###
+
+###Make a list for my results
+psw_vaxx_perc_results = []
+
+#Set my constant parameter, T
+T = 0.5
+
+
+for outcome in outcomes: #This is from the list of outcomes I created above from the five runs of making the network
+    network = outcome['psw_vaxx_net'] #I'm passing the list of modified network 
+    output = percolation_results(network, T)
+    
+    print(output)
+    
+    psw_vaxx_perc_results.append ({ #this adds all of my results from each run of the network to a list so I can see what the outcome of each run is. Here, run tells which run of the model it is working off of and results
+        "run": outcome ["run"],
+        "results": output
+    })
+
+print("In a network (scale-free) with all of the bars closed, the average size for a large epidemic and small outbreak are the first two values, and the probability of a large outbreak taking place is the last value", psw_vaxx_perc_results)
+######
+
+#####
+###First come, first serve vaccination fxn ####
+def vaccinate_randos(network, people, v): #function with inputs of network name, p = number of people vaccinated and v = vaccine efficacy 
+    
+    net_copy = network.copy() #copies the network
+    
+    lucky_randos = nprnd.choice(list(net_copy.nodes), people, replace = False) #Selects 50 random nodes to get the vaccine from all of the possible nodes in the network
+    
+    full_vaxxed_randos = round(len(lucky_randos) * v) #simulates a vaccine efficacy less than 100% by calculating some percentage of random nodes to be efficaciously vaccinated
+    
+    vaxxed = nprnd.choice(lucky_randos, full_vaxxed_randos , replace=False) #chooses the nodes to be vaccinated efficaciously based upon the calculated percentage 
+   
+    vaxxed_randos = net_copy.remove_nodes_from(vaxxed) #removes the selected actually efficiaciously vaccinated nodes from the network
+    return(net_copy)
+######
+
+#### Check to make sure that works####
+###Set parameters
+network = G #Original network made by Dr. Bansal
+people = 50 #Number of vaccinated individuals
+v = 0.75 #Vaccine efficacy
+
+outcomes = [] #Makes a list for my outcomes
+
+for i in range(5): #Loops five times
+    print(f"Run {i + 1}:") #run label
+    
+#call function and assign it to a new object so that I can compare to the network that was unmodified
+    random_vaxx_net = vaccinate_randos(network, people, v)
+    
+#Below I make a list in outcomes for each loop through of the outcomes from each run of the network
+    outcomes.append({
+        "run": i + 1,
+        "random_vaxx_net": random_vaxx_net
+    })
+print(outcomes) #verify that networks are being made
+######
+
+########
+####Percolation time ###
+
+###Make a list for my results
+random_vaxx_perc_results = []
+
+#Set my constant parameter, T
+T = 0.5
+
+
+for outcome in outcomes: #This is from the list of outcomes I created above from the five runs of making the network
+    network = outcome['random_vaxx_net'] #I'm passing the list of modified network 
+    output = percolation_results(network, T)
+    
+    print(output)
+    
+    random_vaxx_perc_results.append ({ #this adds all of my results from each run of the network to a list so I can see what the outcome of each run is. Here, run tells which run of the model it is working off of and results
+        "run": outcome ["run"],
+        "results": output
+    })
+
+print("In a network (scale-free) with random vaccination the average size for a large epidemic and small outbreak are the first two values, and the probability of a large outbreak taking place is the last value", random_vaxx_perc_results)
+#####
+
+####Sensitivity Analysis loop####
+outcomes = [] #Makes a list for my outcomes
+
+list_people = [50, 100, 200, 300, 400, 500, 600, 700, 800] #list of the number of people that are going to be vaccinated
+
+for people in list_people: #for each level of people, I am going to run the simulation 5 times 
+    for i in range(5): #Loops five times
+        print(f"Run {i + 1}:") #run label
+    
+#call function and assign it to a new object so that I can compare to the network that was unmodified
+        random_vaxx_net = vaccinate_randos(network, people, v)
+    
+#Below I make a list in outcomes for each loop through of the outcomes from each run of the network
+        outcomes.append({
+            "run": i + 1,
+            "random_vaxx_net": random_vaxx_net
+        })
+print(outcomes)
+#######
+
+####Run sensitivity analysis####
+
+####Percolate with all of the different vaccinated people numbers time ###
+
+###Make a list for my results
+random_vaxx_perc_results = []
+
+#Set my constant parameter, T
+T = 0.5
+
+
+for outcome in outcomes: #This is from the list of outcomes I created above from the five runs of making the network
+    network = outcome['random_vaxx_net'] #I'm passing the list of modified network 
+    output = percolation_results(network, T)
+    
+    print(output)
+    
+    random_vaxx_perc_results.append ({ #this adds all of my results from each run of the network to a list so I can see what the outcome of each run is. Here, run tells which run of the model it is working off of and results
+        "run": outcome ["run"],
+        "results": output
+    })
+#####
