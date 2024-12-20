@@ -1,0 +1,132 @@
+####import libraries
+import matplotlib.pyplot as plt  # a library to create plots
+import numpy as np               # a library with useful statistical and numerical tools
+import numpy.random as nprnd     # a library with useful tools related to random numbers
+import random as rnd             # a library for some special tasks related to random numbers
+import networkx as nx            # a library for working with networks
+import pandas as pd              #library for reading my csv
+import scipy.integrate as sp_int #Import a library to integrate differential equations, which will be useful in the construction of our SIR model with vaccinations
+
+
+
+#First present the SIR model without vaccination
+#####################################
+def sir_model(SIR, t, mu, beta, gamma, alpha):
+# function for set of differential equations for our SIR model
+    S, I, R = SIR
+    # How Susceptibles change over time
+    dSdt = mu * (S+I+R) -mu * S -beta * S * I
+
+    # How Infecteds change over time
+    dIdt = -mu* I + beta * S * I - gamma * I - alpha * I
+
+    # How Recovereds change over time
+    dRdt = -mu * R + gamma * I 
+
+    return [dSdt, dIdt, dRdt]
+
+#####################################
+def compute_sir_model(S0, I0, R0, tvalues, mu, beta, gamma, alpha):
+# Solve differential equations of SIR model using the scipy library and plot the results
+    solution = sp_int.odeint(func=sir_model, y0=(S0, I0, R0), t=tvalues, args=(mu, beta, gamma, alpha))
+    S = solution[:, 0] # S is the size of the susceptible population
+    I = solution[:, 1] # I is the size of the infected population
+    R = solution[:, 2] # R is the size of the recovered population
+
+    #####################################
+    # Plot the population sizes for susceptibles, infecteds and recovereds
+    plt.plot(tvalues, S, 'b', label='susceptibles')
+    plt.plot(tvalues, I, 'r', label='infecteds')
+    plt.plot(tvalues, R, 'g', label='recovered')
+    plt.legend(loc='best')
+    plt.xlabel('time')
+    plt.ylabel('population size')
+    plt.grid()
+
+    return S, I, R
+#########
+
+
+####Run basic SIR Model
+#Specify input parameters
+num_timesteps = 150                #setting a desired number of time steps
+S0 = 93586000                      # initial number susceptibles
+I0 = 1                             # initial number infectious
+R0 = 10579637                      # initial number recovered
+mu = 0                             # birth and death rates
+beta = 0.00000000534               # transmission rate
+gamma = 0.0476                     #recovery rate
+alpha =0.005                       # virulence
+
+### Create variable for IV called tvalues
+tvalues = range(0, num_timesteps+1)       # a list of t values
+
+S, I, R = compute_sir_model(S0, I0, R0, tvalues, mu, beta, gamma, alpha)
+print(S, I, R)
+########
+
+
+
+#Implement an SIRV model instead to consider the vaccine. Parameters will be unchanged from above; except now vaccine efficacy is a consideration we have to make. 
+#####################################
+def sirv_model(SVIR, t, mu, nu, beta, epsilon, gamma, alpha):
+# function for set of differential equations for our SIR model
+    S, V, I, R = SVIR
+    
+    # Change in Susceptibles
+    dSdt = mu * (S + I + R) - mu * S - nu * S - beta * S * I
+    
+    # Change in Vaccinated
+    dVdt = nu * S - mu * V - (1 - epsilon) * beta * V * I
+    
+    # Change in Infected
+    dIdt = beta * S * I - (mu + gamma + alpha) * I + (1 - epsilon) * beta * V * I
+    
+    # Change in Recovered
+    dRdt = gamma * I - mu * R
+
+    return [dSdt, dVdt, dIdt, dRdt]
+
+#####################################
+def compute_sirv_model(S0, V0, I0, R0, tvalues, mu, nu, beta, epsilon, gamma, alpha):
+# Solve differential equations of SIR model using the scipy library and plot the results
+    solution = sp_int.odeint(func=sirv_model, y0=(S0, V0, I0, R0), t=tvalues, args=(mu, nu, beta, epsilon, gamma, alpha))
+    S = solution[:, 0] # S is the size of the susceptible population
+    V = solution[:, 1] # V is the size of the vaccinated population
+    I = solution[:, 2] # I is the size of the infected population
+    R = solution[:, 3] # R is the size of the recovered population
+
+    #####################################
+    # Plot the population sizes for susceptibles, infecteds and recovereds
+    plt.plot(tvalues, S, 'b', label='susceptibles')
+    plt.plot(tvalues, V, 'purple', label='vaccinated')
+    plt.plot(tvalues, I, 'r', label='infecteds')
+    plt.plot(tvalues, R, 'g', label='recovered')
+    plt.legend(loc='best')
+    plt.xlabel('time')
+    plt.ylabel('population size')
+    plt.grid()
+
+    return S, V, I, R
+
+#########
+#We will call our SIRV model. All variables should stay the same with the exception of nu, which is the vaccination rate and independent variable. Changing the value of nu will change the epidemic size and duration. 
+
+#Specify input parameters
+num_timesteps = 150                #setting a desired number of time steps
+S0 = 93536332                      # initial number susceptibles
+V0 = 0                             #initial number vaccinated
+I0 = 977                           # initial number infectious
+R0 = 10579637                      # initial number recovered
+mu = 0                             # birth and death rates
+nu = 0.05                        #Vaccination rate
+beta = 0.00000000534               #transmission rate
+epsilon = 0.75                     #vaccine efficacy
+gamma = 0.0476                     #recovery rate
+alpha =0.005                       #virulence
+
+### Create variable for IV called tvalues
+tvalues = range(0, num_timesteps+1)       # a list of t values
+
+S, V, I, R = compute_sirv_model(S0, V0, I0, R0, tvalues, mu, nu, beta, epsilon, gamma, alpha)
+
